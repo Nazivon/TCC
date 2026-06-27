@@ -303,3 +303,38 @@ def plotar_ranking_desvio(df: pd.DataFrame) -> None:
     plt.tight_layout()
     plt.savefig(PASTA_GRAFICOS / "fig4_ranking_desvio.png", dpi=200)
     plt.close()
+
+# Adicionar a utils/plots.py
+def plotar_estacionariedade(agg: pd.DataFrame) -> tuple:
+    """Gera gráfico da tendência temporal do tempo por movimento[cite: 12]."""
+    fig, axes = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
+    x = agg["move_idx"].values
+    
+    # Painel superior
+    axes[0].plot(x, agg["media"], color=COR_JS, lw=1.5, label="Média")
+    axes[0].plot(x, agg["mediana"], color=COR_ACORDO, lw=1.5, ls="--", label="Mediana")
+    axes[0].fill_between(x, agg["media"]-agg["dp"], agg["media"]+agg["dp"], alpha=0.15, color=COR_JS)
+    
+    slope, intercept, r, p, _ = stats.linregress(x, agg["media"])
+    axes[0].plot(x, slope * x + intercept, color="black", lw=1, ls=":", label=f"Tendência (r={r:.3f}, p={p:.4f})")
+    axes[0].legend(); axes[0].set_ylabel("Tempo (s)")
+    
+    # Painel inferior
+    axes[1].bar(x, agg["n"]/1000, color=COR_NEUTRA, alpha=0.6)
+    axes[1].set_xlabel("Índice do movimento"); axes[1].set_ylabel("Observações (x1.000)")
+    
+    plt.tight_layout()
+    plt.savefig(PASTA_GRAFICOS / "fig_estacionariedade.png", dpi=150)
+    plt.close()
+    return slope, p
+
+def plotar_treino_vs_teste(ta_tr, js_tr, ta_te, js_te) -> None:
+    """Visualização da generalização do modelo[cite: 11]."""
+    fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+    for i, (vals, label, cor) in enumerate([((ta_tr*100, ta_te*100), "Taxa de acordo (%)", COR_ACORDO), 
+                                            ((js_tr, js_te), "JS-divergência", COR_JS)]):
+        bars = ax[i].bar(["Treino", "Teste"], vals, color=cor, alpha=0.7)
+        ax[i].set_ylabel(label)
+        for b, v in zip(bars, vals): ax[i].text(b.get_x()+b.get_width()/2, v+max(vals)*0.02, f"{v:.3f}", ha="center")
+    plt.savefig(PASTA_GRAFICOS / "fig_backtest_treino_vs_teste.png", dpi=200)
+    plt.close()
