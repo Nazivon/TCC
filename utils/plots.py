@@ -7,6 +7,7 @@ Mantém os scripts analíticos focados apenas na lógica matemática.
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
+import matplotlib.gridspec as gridspec
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -166,4 +167,139 @@ def plotar_intraplayer_delta(js_t1, js_t3, jsp_t1, jsp_t3, ta_t1, ta_t3) -> None
         ax.legend()
     plt.tight_layout()
     plt.savefig(PASTA_GRAFICOS / "fig_intra_delta.png", dpi=300)
+    plt.close()
+
+# Para as Análises de Complexidade Estrutural
+
+# Paleta global (manter coesa com o restante do projeto)
+COR_ACORDO = "#457b9d"; COR_JS = "#e63946"; COR_NEUTRA = "#6c757d"; COR_CH = "#2a9d8f"
+
+def plotar_dispersao_ch_desvio(df: pd.DataFrame) -> None:
+    """Dispersão entre Score de Terada e as métricas de divergência[cite: 8]."""
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5.5))
+    for ax, col_y, cor_y, ylabel, titulo in [(axes[0], "js_divergencia", COR_JS, "JS-divergência (empírica ∥ ótima)", "(a) Complexidade Híbrida × JS-divergência"),
+                                             (axes[1], "taxa_acordo", COR_ACORDO, "Taxa de acordo (empírica == ótima)", "(b) Complexidade Híbrida × Taxa de acordo")]:
+        r_val, p_val = stats.spearmanr(df["complexidade_hibrida"], df[col_y])
+        ax.scatter(df["complexidade_hibrida"], df[col_y], color=cor_y, alpha=0.60, s=36, edgecolors="white", linewidths=0.4)
+        
+        mask = ~(np.isnan(df["complexidade_hibrida"]) | np.isnan(df[col_y]))
+        m, b, *_ = stats.linregress(df["complexidade_hibrida"][mask], df[col_y][mask])
+        xr = np.linspace(df["complexidade_hibrida"][mask].min(), df["complexidade_hibrida"][mask].max(), 200)
+        ax.plot(xr, m * xr + b, color="black", lw=1.5, ls="--", label=f"Spearman r = {r_val:.3f} (p = {p_val:.4f})")
+        
+        ax.set_xlabel("Score de Complexidade Híbrida (0–100)"); ax.set_ylabel(ylabel); ax.set_title(titulo)
+        ax.legend()
+        if col_y == "taxa_acordo": ax.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1, decimals=0))
+
+    plt.tight_layout()
+    plt.savefig(PASTA_GRAFICOS / "fig_ch_scatter_ch_vs_desvio.png", dpi=200)
+    plt.close()
+
+def plotar_histogramas_desvio(df: pd.DataFrame) -> None:
+    """Distribuição geral das métricas de desvio nos labirintos[cite: 9]."""
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.5))
+    ta_media = df["taxa_acordo"].mean()
+    js_media = df["js_divergencia"].mean()
+
+    ax = axes[0]
+    ax.hist(df["taxa_acordo"], bins=22, color=COR_ACORDO, alpha=0.8, edgecolor="white")
+    ax.axvline(ta_media, color="black", lw=1.8, ls="--", label=f"média = {ta_media:.3f} ({ta_media:.1%})")
+    ax.set_xlabel("Taxa de acordo (ação empírica == ação ótima)"); ax.set_ylabel("Número de labirintos")
+    ax.set_title("(a) Taxa de acordo"); ax.legend()
+    ax.xaxis.set_major_formatter(mticker.PercentFormatter(xmax=1, decimals=0))
+
+    ax2 = axes[1]
+    ax2.hist(df["js_divergencia"], bins=22, color=COR_JS, alpha=0.8, edgecolor="white")
+    ax2.axvline(js_media, color="black", lw=1.8, ls="--", label=f"média = {js_media:.4f}")
+    ax2.set_xlabel("Divergência JS (0 = idênticas, 1 = máximo)"); ax2.set_ylabel("Número de labirintos")
+    ax2.set_title("(b) Divergência JS"); ax2.legend()
+
+    plt.tight_layout()
+    plt.savefig(PASTA_GRAFICOS / "fig_51_histogramas.png", dpi=200)
+    plt.close()
+
+def plotar_js_vs_complexidade(df: pd.DataFrame) -> None:
+    """Dispersão e Boxplot comparando Tortuosidade e Nível com a divergência JS[cite: 9]."""
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    
+    ax = axes[0]
+    sc = ax.scatter(df["tortuosidade"], df["js_divergencia"], c=df["difficult_level"], cmap="RdYlGn_r",
+                    s=df["total_games"] / df["total_games"].max() * 200 + 20, alpha=0.75, edgecolors="white", linewidths=0.4)
+    x, y = df["tortuosidade"].dropna(), df["js_divergencia"].dropna()
+    idx = x.index.intersection(y.index)
+    m, b, r, p, _ = stats.linregress(x[idx], y[idx])
+    xr = np.linspace(x.min(), x.max(), 100)
+    ax.plot(xr, m * xr + b, color="crimson", lw=1.5, ls="--", label=f"r={r:.2f}, p={p:.3f}")
+    ax.set_xlabel("Tortuosidade (moves / grid)"); ax.set_ylabel("JS-divergência média")
+    ax.set_title("Tortuosidade vs. Desvio"); ax.legend()
+    plt.colorbar(sc, ax=ax, label="Nível de dificuldade")
+
+    ax2 = axes[1]
+    niveis = sorted(df["difficult_level"].dropna().unique())
+    dados = [df[df["difficult_level"] == n]["js_divergencia"].dropna().values for n in niveis]
+    bp = ax2.boxplot(dados, patch_artist=True, notch=False)
+    cores = plt.cm.RdYlGn_r(np.linspace(0.15, 0.85, len(niveis)))
+    for patch, cor in zip(bp["boxes"], cores): patch.set_facecolor(cor); patch.set_alpha(0.75)
+    ax2.set_xticks(range(1, len(niveis) + 1)); ax2.set_xticklabels([f"Nível {n}" for n in niveis])
+    ax2.set_ylabel("JS-divergência média"); ax2.set_title("Desvio por nível de dificuldade")
+
+    plt.tight_layout()
+    plt.savefig(PASTA_GRAFICOS / "fig1_js_vs_complexidade.png", dpi=200)
+    plt.close()
+
+def plotar_heatmap_correlacoes(df_corr: pd.DataFrame) -> None:
+    """Heatmap das correlações de Spearman (Métricas vs. Desvio)[cite: 9]."""
+    fig, ax = plt.subplots(figsize=(8, 5))
+    labels = [m.split("(")[0].strip() for m in df_corr["métrica"]]
+    valores = df_corr[["r_JS", "r_desvio"]].values
+    im = ax.imshow(valores.T, cmap="RdBu_r", vmin=-1, vmax=1, aspect="auto")
+
+    ax.set_xticks(range(len(labels))); ax.set_xticklabels(labels, rotation=40, ha="right", fontsize=9)
+    ax.set_yticks([0, 1]); ax.set_yticklabels(["r JS-divergência", "r Desvio (%)"])
+    ax.set_title("Correlações de Spearman: métricas estruturais vs. desvio humano")
+
+    for i in range(len(labels)):
+        for j in range(2):
+            v = valores[i, j]
+            sig = df_corr.iloc[i]["sig_JS" if j == 0 else "sig_desvio"]
+            txt = f"{v:.2f}{'*' if sig == '✓' else ''}"
+            ax.text(i, j, txt, ha="center", va="center", fontsize=8, color="white" if abs(v) > 0.5 else "black")
+
+    plt.colorbar(im, ax=ax, label="Correlação de Spearman")
+    plt.tight_layout()
+    plt.savefig(PASTA_GRAFICOS / "fig2_heatmap_correlacoes.png", dpi=200)
+    plt.close()
+
+def plotar_desvio_vs_moves(df: pd.DataFrame) -> None:
+    """Relação entre média de movimentos e taxa de desvio (%)[cite: 9]."""
+    fig, ax = plt.subplots(figsize=(8, 5))
+    sc = ax.scatter(df["avg_moves"], df["desvio_pct"] * 100, c=df["js_divergencia"], cmap="plasma", s=60, alpha=0.8, edgecolors="white")
+    x, y = df["avg_moves"].dropna(), (df["desvio_pct"] * 100).dropna()
+    idx = x.index.intersection(y.index)
+    m, b, r, *_ = stats.linregress(x[idx], y[idx])
+    xr = np.linspace(x.min(), x.max(), 100)
+    ax.plot(xr, m * xr + b, color="black", lw=1.5, ls="--", label=f"Spearman r≈{r:.2f}")
+    
+    ax.set_xlabel("Média de movimentos por partida"); ax.set_ylabel("Taxa de desvio humano (%)")
+    ax.set_title("Comprimento do caminho vs. desvio da política ótima"); ax.legend()
+    plt.colorbar(sc, ax=ax, label="JS-divergência")
+    
+    plt.tight_layout()
+    plt.savefig(PASTA_GRAFICOS / "fig3_desvio_vs_avg_moves.png", dpi=200)
+    plt.close()
+
+def plotar_ranking_desvio(df: pd.DataFrame) -> None:
+    """Gráfico de barras dos 20 labirintos com maior divergência JS[cite: 9]."""
+    top20 = df.nlargest(20, "js_divergencia").sort_values("js_divergencia")
+    fig, ax = plt.subplots(figsize=(9, 7))
+    cores = plt.cm.RdYlGn_r((top20["difficult_level"] - 1) / 4)
+    bars = ax.barh(top20["maze_name"], top20["js_divergencia"], color=cores, edgecolor="white", linewidth=0.4)
+
+    for bar, nivel in zip(bars, top20["difficult_level"]):
+        ax.text(bar.get_width() + 0.002, bar.get_y() + bar.get_height() / 2, f"Nv.{int(nivel)}", va="center", fontsize=8, color="gray")
+
+    ax.set_xlabel("JS-divergência média (empírica ∥ ótima)")
+    ax.set_title("Top 20 labirintos com maior desvio humano")
+    plt.tight_layout()
+    plt.savefig(PASTA_GRAFICOS / "fig4_ranking_desvio.png", dpi=200)
     plt.close()
