@@ -1,5 +1,5 @@
 """
-scripts/03_learning/intraplayer_learning.py
+scripts/03_aprendizado/intraplayer_learning.py
 ===========================================
 Análise de Aprendizado Intra-Jogador (Longitudinal).
 Divide as trajetórias dos jogadores ao longo do tempo (tercis) e avalia o 
