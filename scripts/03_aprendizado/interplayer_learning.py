@@ -1,5 +1,5 @@
 """
-scripts/03_learning/interplayer_learning.py
+scripts/03_aprendizado/interplayer_learning.py
 ===========================================
 Análise de Aprendizado Inter-Jogadores (Cross-sectional).
 Investiga se jogadores mais experientes se aproximam mais da política ótima 
