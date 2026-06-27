@@ -1,5 +1,5 @@
 """
-scripts/01_exploration/exploratory_analysis.py
+scripts/01_exploracao/exploratory_analysis.py
 ==============================================
 Módulo de Análise Exploratória e Pré-processamento dos Logs.
 Realiza limpeza de dados, correção de inconsistências na contabilização 
