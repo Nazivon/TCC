@@ -1,5 +1,5 @@
 """
-scripts/03_learning/learning_feasibility.py
+scripts/03_aprendizado/learning_feasibility.py
 ===========================================
 Módulo de Análise de Viabilidade de Aprendizado.
 Verifica o volume de reincidência e o total de partidas por jogador 
