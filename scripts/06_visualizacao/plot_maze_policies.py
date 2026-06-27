@@ -13,7 +13,7 @@ from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
 from pathlib import Path
 
-# Configurações de estilo
+# Configurações de estilo e constantes
 COR_PAREDE = '#2d2d2d'; COR_CAMINHO = '#f5f0e8'; COR_TERMINAL = '#2a9d8f'
 COR_INICIO = '#e76f51'; COR_SETA_OT = '#1d3557'; COR_SETA_EMP = '#e63946'
 COR_ACORDO = '#a8dadc'; COR_DESACORDO = '#f4a261'
@@ -45,17 +45,44 @@ def plotar_politica_otima(maze_name, mdp, res_vi):
                 ax.annotate('', xy=(cx+dx, cy+dy), xytext=(cx, cy), arrowprops=dict(arrowstyle='->', color=COR_SETA_OT, lw=1.5), zorder=4)
 
     ax.set_title(f'Política Ótima $\\pi^*(s)$ — Labirinto: {maze_name}')
+    ax.set_xlim(-0.5, w - 0.5); ax.set_ylim(h - 0.5, -0.5)
     plt.savefig(f"../../graficos/fig_labirinto_{maze_name}_politica_otima.png", dpi=200)
     plt.close()
 
 def plotar_acordo_empirico(maze_name, mdp, pol_emp_raw, res_vi):
     """Gera o mapa comparativo entre ação ótima vs. ação empírica[cite: 14]."""
+    estados = mdp[maze_name]['estados']
+    terminal = mdp[maze_name]['terminal']
+    s_inicio = min([s for s in estados if s != terminal], key=lambda s: res_vi[maze_name]['V'].get(s, 0))
     pol_ot = res_vi[maze_name]['politica_otima']
     pol_emp = {s: d for (m, s), d in pol_emp_raw.items() if m == maze_name}
     
-    # [Lógica de plotagem idêntica à do notebook, iterando sobre estados e comparando pol_ot[s] com max(pol_emp[s])]
-    # ... (código de anotação de setas divergentes e coloração de células) ...
+    fig, ax = plt.subplots(figsize=(7, 10))
+    ax.set_facecolor(COR_PAREDE)
     
+    for s in estados:
+        cx, cy = s[1], s[2]
+        if s == terminal:
+            ax.add_patch(plt.Rectangle((cx-0.5, cy-0.5), 1, 1, color=COR_TERMINAL, zorder=1))
+            ax.text(cx, cy, 'SAÍDA', ha='center', va='center', fontsize=7, color='white', zorder=3)
+            continue
+        
+        # Lógica de cálculo de acordo
+        a_ot = pol_ot.get(s)
+        dist = pol_emp.get(s, {})
+        a_emp = max(dist, key=dist.get) if dist else None
+        
+        cor_cell = COR_ACORDO if (a_ot and a_emp and a_ot == a_emp) else (COR_DESACORDO if a_ot and a_emp else COR_CAMINHO)
+        ax.add_patch(plt.Rectangle((cx-0.5, cy-0.5), 1, 1, color=cor_cell, zorder=1))
+        
+        if a_ot:
+            dx, dy = SETAS[a_ot]
+            ax.annotate('', xy=(cx+dx*0.9, cy+dy*0.9), xytext=(cx, cy), arrowprops=dict(arrowstyle='->', color=COR_SETA_OT, lw=1.6), zorder=5)
+        if a_emp and a_emp != a_ot:
+            dx, dy = SETAS[a_emp]
+            ax.annotate('', xy=(cx+dx*0.55, cy+dy*0.55), xytext=(cx, cy), arrowprops=dict(arrowstyle='->', color=COR_SETA_EMP, lw=1.4, linestyle='dashed'), zorder=4)
+
+    ax.set_title(f'Política Empírica vs. Ótima: {maze_name}')
     plt.savefig(f"../../graficos/fig_labirinto_{maze_name}_acordo.png", dpi=200)
     plt.close()
 
