@@ -1,5 +1,5 @@
 """
-scripts/04_complexity/structural_analysis.py
+scripts/04_complexidade_estrutural/structural_analysis.py
 ============================================
 Análise de Complexidade Estrutural.
 Cruza os resultados de desvio (resumo_mdp.csv) com os dados estruturais (mazes.json)
