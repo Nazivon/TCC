@@ -20,3 +20,12 @@ O projeto investiga o comportamento de navegação humano em um jogo de labirint
 2. **Instalação:** Instale as dependências necessárias executando:
    ```bash
    pip install -r requirements.txt
+3. **Execução:** Os scripts devem ser executados a partir da raiz da pasta scripts/, garantindo que os caminhos dos dados estejam configurados corretamente:
+   * Primeiro, execute os scripts de processamento e aprendizado.
+   * Em seguida, utilize os scripts de validação e complexidade.
+
+## Metodologia
+
+A modelagem segue o rigor analítico de processos de decisão markovianos, aplicando testes estatísticos como Wilcoxon signed-rank e correlações de Spearman para validar as hipóteses de desvio humano em relação à política ótima do MDP.
+
+Desenvolvido por _Nazivon Santos_ | _TCC v1_
