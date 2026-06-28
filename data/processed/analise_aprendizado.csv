@@ -1,0 +1,4 @@
+grupo,n_estados,taxa_acordo,js_divergencia,desvio_pct
+novato,80350,0.7105,0.2401,0.2895
+intermediario,92619,0.7355,0.2188,0.2645
+veterano,103633,0.7558,0.2006,0.2442

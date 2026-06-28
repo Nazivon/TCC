@@ -1,0 +1,5 @@
+configuracao,w_score,w_bt,w_moves,w_time,js_medio,taxa_acordo,n_labirintos
+padrao,0.5,0.3,0.1,0.1,0.236,0.6591,237
+so_orig_score,1.0,0.0,0.0,0.0,0.237,0.656,237
+sem_orig_score,0.0,0.5,0.25,0.25,0.2392,0.6575,237
+igualitario,0.25,0.25,0.25,0.25,0.2374,0.6585,237
